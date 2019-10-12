@@ -2,12 +2,13 @@ package sample
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 
 actual class Sample {
     actual fun checkMe() = 44
@@ -37,8 +38,13 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
+    @Serializable
+    data class User(val id: Int, val email: String)
+    @Serializable
+    data class Data(val data: List<User>)
     private fun getUsers(client: HttpClient) {
         val url= "https://reqres.in/api/users"
+        val json = Json(JsonConfiguration.Stable)
 
         // Block execution till request is completed
         runBlocking {
@@ -47,9 +53,15 @@ class MainActivity : AppCompatActivity() {
             client.get<String>(url)
         }.let {users ->
 
-            Toast.makeText(this@MainActivity, "USERS JSON:" + users, Toast.LENGTH_SHORT).show()
+            val userList = Json.nonstrict.parse(Data.serializer(), users) // b is optional since it has default value
 
-            print(users)
+            val lv = findViewById<ListView>(R.id.users)
+            val userAdapter = ArrayAdapter<User>(this,
+                android.R.layout.simple_list_item_1, userList.data);
+
+            lv.adapter = userAdapter
+
+
         }
     }
 
